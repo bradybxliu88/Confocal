@@ -230,6 +230,20 @@ cd server
 npx prisma generate
 ```
 
+### Prisma engine download fails (403 Forbidden)
+If you see "Failed to fetch engine file" or "403 Forbidden" errors:
+```bash
+cd server
+# Set environment variable to ignore missing checksums
+PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING=1 npx prisma generate
+
+# If that still fails, try using the cache from npm install
+rm -rf node_modules/.prisma node_modules/@prisma/client
+npm install
+```
+
+**Note**: The Prisma schema is now fully SQLite-compatible (no enums, arrays, or JSON types).
+
 ---
 
 ## 🎨 Key Features Demonstrated

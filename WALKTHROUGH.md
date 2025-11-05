@@ -484,13 +484,25 @@ npm install
 
 ### Prisma Generate Fails
 
-**Error:** `Failed to fetch engine`
+**Error:** `Failed to fetch engine` or `403 Forbidden` or schema validation errors
+
+**Common causes:**
+1. Network issues downloading Prisma engine binaries
+2. Schema not compatible with SQLite (now fixed!)
 
 **Solution:**
 ```bash
 cd server
+
+# Try with checksum ignore flag
 PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING=1 npx prisma generate
+
+# If still failing, reinstall dependencies
+rm -rf node_modules/.prisma node_modules/@prisma/client
+npm install
 ```
+
+**Note:** The schema is now fully SQLite-compatible (no enums, arrays, or JSON types).
 
 ---
 
