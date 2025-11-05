@@ -1,0 +1,309 @@
+// This is your Prisma schema file
+// Learn more: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  PI_LAB_MANAGER
+  POSTDOC_STAFF
+  GRAD_STUDENT
+  UNDERGRAD_TECH
+}
+
+enum OrderStatus {
+  REQUESTED
+  APPROVED
+  ORDERED
+  SHIPPED
+  RECEIVED
+  CANCELLED
+}
+
+enum AlertType {
+  LOW_STOCK
+  EXPIRATION_WARNING
+  EQUIPMENT_REMINDER
+  ORDER_UPDATE
+  PROJECT_MENTION
+}
+
+enum BookingStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+model User {
+  id            String   @id @default(uuid())
+  email         String   @unique
+  password      String
+  firstName     String
+  lastName      String
+  role          UserRole
+  labAffiliation String
+  profileImage  String?
+  isActive      Boolean  @default(true)
+  lastActive    DateTime @default(now())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  projectsOwned    Project[]      @relation("ProjectOwner")
+  projectMembers   ProjectMember[]
+  bookings         Booking[]
+  ordersCreated    Order[]        @relation("OrderCreator")
+  ordersApproved   Order[]        @relation("OrderApprover")
+  messages         Message[]
+  alerts           Alert[]
+  refreshTokens    RefreshToken[]
+
+  @@index([email])
+  @@index([role])
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+}
+
+model Project {
+  id              String   @id @default(uuid())
+  name            String
+  description     String?
+  progress        Int      @default(0) // 0-100
+  status          String   @default("active") // active, completed, on-hold
+  startDate       DateTime @default(now())
+  targetEndDate   DateTime?
+  budget          Float?
+  budgetUsed      Float    @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  ownerId String
+  owner   User   @relation("ProjectOwner", fields: [ownerId], references: [id])
+
+  // Relations
+  members   ProjectMember[]
+  updates   ProjectUpdate[]
+  orders    Order[]
+  files     File[]
+
+  @@index([ownerId])
+  @@index([status])
+}
+
+model ProjectMember {
+  id        String   @id @default(uuid())
+  projectId String
+  userId    String
+  role      String   @default("member") // owner, member, viewer
+  joinedAt  DateTime @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, userId])
+  @@index([projectId])
+  @@index([userId])
+}
+
+model ProjectUpdate {
+  id          String   @id @default(uuid())
+  projectId   String
+  content     String
+  milestone   Boolean  @default(false)
+  createdBy   String
+  createdAt   DateTime @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+}
+
+model Protocol {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  version     String   @default("1.0")
+  content     String   // Markdown or JSON
+  category    String?
+  tags        String[]
+  isPublic    Boolean  @default(false)
+  createdBy   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([category])
+  @@index([createdBy])
+}
+
+model Reagent {
+  id                String    @id @default(uuid())
+  name              String
+  barcode           String?   @unique
+  vendor            String
+  catalogNumber     String
+  lotNumber         String?
+  quantity          Float
+  unit              String    @default("mL")
+  lowStockThreshold Float
+  storageLocation   String
+  storageTemp       String?   // e.g., "-20°C", "4°C", "RT"
+  handlingNotes     String?
+  receivedDate      DateTime
+  expirationDate    DateTime?
+  isExpired         Boolean   @default(false)
+  isLowStock        Boolean   @default(false)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([barcode])
+  @@index([isLowStock])
+  @@index([isExpired])
+}
+
+model Equipment {
+  id               String   @id @default(uuid())
+  name             String
+  model            String?
+  serialNumber     String?
+  location         String
+  description      String?
+  maintenanceNotes String?
+  isAvailable      Boolean  @default(true)
+  requiresTraining Boolean  @default(false)
+  bookingDuration  Int      @default(60) // Default booking duration in minutes
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  // Relations
+  bookings Booking[]
+
+  @@index([isAvailable])
+}
+
+model Booking {
+  id          String        @id @default(uuid())
+  equipmentId String
+  userId      String
+  startTime   DateTime
+  endTime     DateTime
+  purpose     String?
+  status      BookingStatus @default(SCHEDULED)
+  isRecurring Boolean       @default(false)
+  recurringPattern String?   // JSON pattern for recurring bookings
+  notes       String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  equipment Equipment @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([equipmentId])
+  @@index([userId])
+  @@index([startTime])
+  @@index([status])
+}
+
+model Order {
+  id              String      @id @default(uuid())
+  orderNumber     String      @unique
+  projectId       String?
+  status          OrderStatus @default(REQUESTED)
+  itemName        String
+  vendor          String
+  catalogNumber   String
+  quantity        Int
+  unitPrice       Float
+  totalPrice      Float
+  justification   String?
+  trackingNumber  String?
+  notes           String?
+  createdById     String
+  approvedById    String?
+  requestedDate   DateTime    @default(now())
+  approvedDate    DateTime?
+  orderedDate     DateTime?
+  receivedDate    DateTime?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  project       Project? @relation(fields: [projectId], references: [id])
+  createdBy     User     @relation("OrderCreator", fields: [createdById], references: [id])
+  approvedBy    User?    @relation("OrderApprover", fields: [approvedById], references: [id])
+  files         File[]
+
+  @@index([projectId])
+  @@index([status])
+  @@index([createdById])
+  @@index([orderNumber])
+}
+
+model Alert {
+  id          String    @id @default(uuid())
+  userId      String
+  type        AlertType
+  title       String
+  message     String
+  link        String?
+  isRead      Boolean   @default(false)
+  metadata    Json?     // Additional data as JSON
+  createdAt   DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([isRead])
+  @@index([createdAt])
+}
+
+model Message {
+  id          String   @id @default(uuid())
+  content     String
+  projectId   String?
+  userId      String
+  mentions    String[] // Array of user IDs
+  attachments String[] // Array of file URLs
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model File {
+  id         String   @id @default(uuid())
+  fileName   String
+  fileUrl    String
+  fileType   String
+  fileSize   Int      // Size in bytes
+  projectId  String?
+  orderId    String?
+  uploadedBy String
+  createdAt  DateTime @default(now())
+
+  project Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  order   Order?   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([orderId])
+}
