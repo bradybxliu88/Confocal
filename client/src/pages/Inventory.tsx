@@ -8,7 +8,11 @@ import {
   QrCodeIcon,
   ExclamationTriangleIcon,
   CheckCircleIcon,
+  ArrowDownTrayIcon,
+  DocumentArrowDownIcon,
 } from '@heroicons/react/24/outline';
+import QRCodeGenerator from '../components/common/QRCodeGenerator';
+import { exportReagentsToCSV, exportInventoryToPDF, exportLowStockReportPDF } from '../utils/exportUtils';
 
 const Inventory = () => {
   const [reagents, setReagents] = useState<Reagent[]>([]);
@@ -18,6 +22,7 @@ const Inventory = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterLowStock, setFilterLowStock] = useState(false);
   const [scannedBarcode, setScannedBarcode] = useState('');
+  const [selectedReagentForQR, setSelectedReagentForQR] = useState<Reagent | null>(null);
   const [newReagent, setNewReagent] = useState<any>({
     name: '',
     vendor: '',
@@ -130,6 +135,29 @@ const Inventory = () => {
     return <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-600"></div></div>;
   }
 
+  const handleExport = (type: 'csv' | 'pdf' | 'lowstock') => {
+    if (filteredReagents.length === 0) {
+      toast.error('No data to export');
+      return;
+    }
+
+    try {
+      if (type === 'csv') {
+        exportReagentsToCSV(filteredReagents);
+        toast.success('Exported to CSV successfully!');
+      } else if (type === 'pdf') {
+        exportInventoryToPDF(filteredReagents);
+        toast.success('Exported to PDF successfully!');
+      } else if (type === 'lowstock') {
+        exportLowStockReportPDF(reagents);
+        toast.success('Low stock report generated!');
+      }
+    } catch (error) {
+      toast.error('Export failed');
+      console.error(error);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -137,7 +165,33 @@ const Inventory = () => {
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Inventory Management</h1>
           <p className="text-gray-600 dark:text-gray-400">Track and manage lab reagents and supplies</p>
         </div>
-        <div className="flex space-x-3">
+        <div className="flex space-x-2">
+          <div className="relative group">
+            <button className="btn-secondary flex items-center">
+              <DocumentArrowDownIcon className="w-5 h-5 mr-2" />
+              Export
+            </button>
+            <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10">
+              <button
+                onClick={() => handleExport('csv')}
+                className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-t-lg text-gray-900 dark:text-white"
+              >
+                Export as CSV
+              </button>
+              <button
+                onClick={() => handleExport('pdf')}
+                className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-900 dark:text-white"
+              >
+                Export as PDF
+              </button>
+              <button
+                onClick={() => handleExport('lowstock')}
+                className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-b-lg text-gray-900 dark:text-white"
+              >
+                Low Stock Report
+              </button>
+            </div>
+          </div>
           <button onClick={() => setShowScanModal(true)} className="btn-secondary flex items-center">
             <QrCodeIcon className="w-5 h-5 mr-2" />
             Scan Barcode
@@ -226,9 +280,18 @@ const Inventory = () => {
               </div>
             )}
 
-            <button className="mt-4 w-full btn-secondary text-sm">
-              Update Stock
-            </button>
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              <button className="btn-secondary text-sm">
+                Update Stock
+              </button>
+              <button
+                onClick={() => setSelectedReagentForQR(reagent)}
+                className="btn-primary text-sm flex items-center justify-center"
+              >
+                <QrCodeIcon className="w-4 h-4 mr-1" />
+                QR Code
+              </button>
+            </div>
           </div>
         ))}
       </div>
@@ -391,6 +454,23 @@ const Inventory = () => {
             </form>
           </div>
         </div>
+      )}
+
+      {/* QR Code Modal */}
+      {selectedReagentForQR && (
+        <QRCodeGenerator
+          value={JSON.stringify({
+            id: selectedReagentForQR.id,
+            name: selectedReagentForQR.name,
+            barcode: selectedReagentForQR.barcode,
+            catalogNumber: selectedReagentForQR.catalogNumber,
+            location: selectedReagentForQR.storageLocation,
+            url: `${window.location.origin}/inventory/${selectedReagentForQR.id}`,
+          })}
+          title={selectedReagentForQR.name}
+          subtitle={`${selectedReagentForQR.vendor} • ${selectedReagentForQR.catalogNumber}`}
+          onClose={() => setSelectedReagentForQR(null)}
+        />
       )}
     </div>
   );
