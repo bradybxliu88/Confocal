@@ -10,36 +10,11 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum UserRole {
-  PI_LAB_MANAGER
-  POSTDOC_STAFF
-  GRAD_STUDENT
-  UNDERGRAD_TECH
-}
-
-enum OrderStatus {
-  REQUESTED
-  APPROVED
-  ORDERED
-  SHIPPED
-  RECEIVED
-  CANCELLED
-}
-
-enum AlertType {
-  LOW_STOCK
-  EXPIRATION_WARNING
-  EQUIPMENT_REMINDER
-  ORDER_UPDATE
-  PROJECT_MENTION
-}
-
-enum BookingStatus {
-  SCHEDULED
-  IN_PROGRESS
-  COMPLETED
-  CANCELLED
-}
+// SQLite doesn't support enums, so we use String with validation in code
+// Valid values for role: PI_LAB_MANAGER, POSTDOC_STAFF, GRAD_STUDENT, UNDERGRAD_TECH
+// Valid values for orderStatus: REQUESTED, APPROVED, ORDERED, SHIPPED, RECEIVED, CANCELLED
+// Valid values for alertType: LOW_STOCK, EXPIRATION_WARNING, EQUIPMENT_REMINDER, ORDER_UPDATE, PROJECT_MENTION
+// Valid values for bookingStatus: SCHEDULED, IN_PROGRESS, COMPLETED, CANCELLED
 
 model User {
   id            String   @id @default(uuid())
@@ -47,7 +22,7 @@ model User {
   password      String
   firstName     String
   lastName      String
-  role          UserRole
+  role          String   // PI_LAB_MANAGER, POSTDOC_STAFF, GRAD_STUDENT, UNDERGRAD_TECH
   labAffiliation String
   profileImage  String?
   isActive      Boolean  @default(true)
@@ -143,7 +118,7 @@ model Protocol {
   version     String   @default("1.0")
   content     String   // Markdown or JSON
   category    String?
-  tags        String[]
+  tags        String   @default("") // Comma-separated string: "pcr,cloning,bacteria"
   isPublic    Boolean  @default(false)
   createdBy   String
   createdAt   DateTime @default(now())
@@ -199,18 +174,18 @@ model Equipment {
 }
 
 model Booking {
-  id          String        @id @default(uuid())
+  id          String   @id @default(uuid())
   equipmentId String
   userId      String
   startTime   DateTime
   endTime     DateTime
   purpose     String?
-  status      BookingStatus @default(SCHEDULED)
-  isRecurring Boolean       @default(false)
+  status      String   @default("SCHEDULED") // SCHEDULED, IN_PROGRESS, COMPLETED, CANCELLED
+  isRecurring Boolean  @default(false)
   recurringPattern String?   // JSON pattern for recurring bookings
   notes       String?
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   equipment Equipment @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -222,10 +197,10 @@ model Booking {
 }
 
 model Order {
-  id              String      @id @default(uuid())
-  orderNumber     String      @unique
+  id              String   @id @default(uuid())
+  orderNumber     String   @unique
   projectId       String?
-  status          OrderStatus @default(REQUESTED)
+  status          String   @default("REQUESTED") // REQUESTED, APPROVED, ORDERED, SHIPPED, RECEIVED, CANCELLED
   itemName        String
   vendor          String
   catalogNumber   String
@@ -237,12 +212,12 @@ model Order {
   notes           String?
   createdById     String
   approvedById    String?
-  requestedDate   DateTime    @default(now())
+  requestedDate   DateTime @default(now())
   approvedDate    DateTime?
   orderedDate     DateTime?
   receivedDate    DateTime?
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   project       Project? @relation(fields: [projectId], references: [id])
   createdBy     User     @relation("OrderCreator", fields: [createdById], references: [id])
@@ -256,15 +231,15 @@ model Order {
 }
 
 model Alert {
-  id          String    @id @default(uuid())
+  id          String   @id @default(uuid())
   userId      String
-  type        AlertType
+  type        String   // LOW_STOCK, EXPIRATION_WARNING, EQUIPMENT_REMINDER, ORDER_UPDATE, PROJECT_MENTION
   title       String
   message     String
   link        String?
-  isRead      Boolean   @default(false)
-  metadata    Json?     // Additional data as JSON
-  createdAt   DateTime  @default(now())
+  isRead      Boolean  @default(false)
+  metadata    String?  // JSON string with additional data
+  createdAt   DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -278,8 +253,8 @@ model Message {
   content     String
   projectId   String?
   userId      String
-  mentions    String[] // Array of user IDs
-  attachments String[] // Array of file URLs
+  mentions    String   @default("") // Comma-separated user IDs
+  attachments String   @default("") // Comma-separated file URLs
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

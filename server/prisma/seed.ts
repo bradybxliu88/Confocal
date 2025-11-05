@@ -1,4 +1,4 @@
-import { PrismaClient, UserRole, OrderStatus, BookingStatus } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
@@ -33,7 +33,7 @@ async function main() {
         password: hashedPassword,
         firstName: 'Sarah',
         lastName: 'Chen',
-        role: UserRole.PI_LAB_MANAGER,
+        role: 'PI_LAB_MANAGER',
         labAffiliation: 'Chen Molecular Biology Lab',
         profileImage: 'https://i.pravatar.cc/150?img=1',
       },
@@ -44,7 +44,7 @@ async function main() {
         password: hashedPassword,
         firstName: 'Michael',
         lastName: 'Rodriguez',
-        role: UserRole.POSTDOC_STAFF,
+        role: 'POSTDOC_STAFF',
         labAffiliation: 'Chen Molecular Biology Lab',
         profileImage: 'https://i.pravatar.cc/150?img=2',
       },
@@ -55,7 +55,7 @@ async function main() {
         password: hashedPassword,
         firstName: 'Emily',
         lastName: 'Zhang',
-        role: UserRole.GRAD_STUDENT,
+        role: 'GRAD_STUDENT',
         labAffiliation: 'Chen Molecular Biology Lab',
         profileImage: 'https://i.pravatar.cc/150?img=3',
       },
@@ -66,7 +66,7 @@ async function main() {
         password: hashedPassword,
         firstName: 'James',
         lastName: 'Wilson',
-        role: UserRole.GRAD_STUDENT,
+        role: 'GRAD_STUDENT',
         labAffiliation: 'Chen Molecular Biology Lab',
         profileImage: 'https://i.pravatar.cc/150?img=4',
       },
@@ -77,7 +77,7 @@ async function main() {
         password: hashedPassword,
         firstName: 'Alex',
         lastName: 'Patel',
-        role: UserRole.UNDERGRAD_TECH,
+        role: 'UNDERGRAD_TECH',
         labAffiliation: 'Chen Molecular Biology Lab',
         profileImage: 'https://i.pravatar.cc/150?img=5',
       },
@@ -186,7 +186,7 @@ async function main() {
         version: '2.1',
         content: '# Western Blot Protocol\n\n## Materials\n- PVDF membrane\n- Transfer buffer\n- Blocking buffer\n\n## Procedure\n1. Transfer proteins to membrane\n2. Block for 1 hour\n3. Incubate with primary antibody overnight...',
         category: 'Protein Analysis',
-        tags: ['western blot', 'protein', 'antibody'],
+        tags: 'western blot,protein,antibody',
         isPublic: true,
         createdBy: users[1].id,
       },
@@ -198,7 +198,7 @@ async function main() {
         version: '1.5',
         content: '# PCR Protocol\n\n## Materials\n- DNA template\n- Primers\n- Taq polymerase\n- dNTPs\n\n## Procedure\n1. Prepare master mix\n2. Add template\n3. Run PCR cycle...',
         category: 'Molecular Biology',
-        tags: ['PCR', 'DNA', 'amplification'],
+        tags: 'PCR,DNA,amplification',
         isPublic: true,
         createdBy: users[0].id,
       },
@@ -210,7 +210,7 @@ async function main() {
         version: '3.0',
         content: '# Cell Culture Maintenance\n\n## Materials\n- Cell culture media\n- PBS\n- Trypsin\n\n## Procedure\n1. Warm media to 37°C\n2. Aspirate old media\n3. Wash with PBS...',
         category: 'Cell Culture',
-        tags: ['cell culture', 'passage', 'maintenance'],
+        tags: 'cell culture,passage,maintenance',
         isPublic: true,
         createdBy: users[2].id,
       },
@@ -222,7 +222,7 @@ async function main() {
         version: '1.8',
         content: '# Immunofluorescence Protocol\n\n## Materials\n- Primary antibody\n- Secondary antibody\n- DAPI\n- Mounting medium\n\n## Procedure\n1. Fix cells with 4% PFA\n2. Permeabilize with Triton X-100\n3. Block with serum...',
         category: 'Microscopy',
-        tags: ['immunofluorescence', 'antibody', 'microscopy'],
+        tags: 'immunofluorescence,antibody,microscopy',
         isPublic: true,
         createdBy: users[1].id,
       },
@@ -234,7 +234,7 @@ async function main() {
         version: '2.0',
         content: '# Plasmid Mini-Prep\n\n## Materials\n- Bacterial culture\n- Lysis buffer\n- Neutralization buffer\n- Wash buffer\n\n## Procedure\n1. Pellet bacterial cells\n2. Resuspend in lysis buffer\n3. Add neutralization buffer...',
         category: 'Molecular Biology',
-        tags: ['plasmid', 'DNA', 'mini-prep'],
+        tags: 'plasmid,DNA,mini-prep',
         isPublic: true,
         createdBy: users[3].id,
       },
@@ -507,7 +507,7 @@ async function main() {
         startTime: new Date(today.getTime() + 2 * 60 * 60 * 1000), // 11 AM today
         endTime: new Date(today.getTime() + 4 * 60 * 60 * 1000), // 1 PM today
         purpose: 'Live cell imaging for CRISPR project',
-        status: BookingStatus.SCHEDULED,
+        status: 'SCHEDULED',
       },
     }),
     prisma.booking.create({
@@ -517,7 +517,7 @@ async function main() {
         startTime: new Date(today.getTime() + 1 * 60 * 60 * 1000), // 10 AM today
         endTime: new Date(today.getTime() + 4 * 60 * 60 * 1000), // 1 PM today
         purpose: 'PCR amplification of gene constructs',
-        status: BookingStatus.SCHEDULED,
+        status: 'SCHEDULED',
       },
     }),
     prisma.booking.create({
@@ -527,7 +527,7 @@ async function main() {
         startTime: new Date(today.getTime() + 5 * 60 * 60 * 1000), // 2 PM today
         endTime: new Date(today.getTime() + 6 * 60 * 60 * 1000), // 3 PM today
         purpose: 'Plate reading for cell viability assay',
-        status: BookingStatus.SCHEDULED,
+        status: 'SCHEDULED',
       },
     }),
     prisma.booking.create({
@@ -537,7 +537,7 @@ async function main() {
         startTime: new Date(today.getTime() + 24 * 60 * 60 * 1000 + 3 * 60 * 60 * 1000), // 12 PM tomorrow
         endTime: new Date(today.getTime() + 24 * 60 * 60 * 1000 + 4.5 * 60 * 60 * 1000), // 1:30 PM tomorrow
         purpose: 'Cell sorting for RNA-seq',
-        status: BookingStatus.SCHEDULED,
+        status: 'SCHEDULED',
       },
     }),
   ]);
@@ -550,7 +550,7 @@ async function main() {
       data: {
         orderNumber: `ORD-${Date.now()}-0001`,
         projectId: projects[0].id,
-        status: OrderStatus.REQUESTED,
+        status: 'REQUESTED',
         itemName: 'Anti-Cas9 Antibody',
         vendor: 'Cell Signaling Technology',
         catalogNumber: '#14697',
@@ -565,7 +565,7 @@ async function main() {
       data: {
         orderNumber: `ORD-${Date.now()}-0002`,
         projectId: projects[0].id,
-        status: OrderStatus.APPROVED,
+        status: 'APPROVED',
         itemName: 'DMEM High Glucose Media',
         vendor: 'ThermoFisher',
         catalogNumber: '11965-092',
@@ -582,7 +582,7 @@ async function main() {
       data: {
         orderNumber: `ORD-${Date.now()}-0003`,
         projectId: projects[1].id,
-        status: OrderStatus.ORDERED,
+        status: 'ORDERED',
         itemName: 'Ni-NTA Agarose Beads',
         vendor: 'Qiagen',
         catalogNumber: '30210',
@@ -601,7 +601,7 @@ async function main() {
       data: {
         orderNumber: `ORD-${Date.now()}-0004`,
         projectId: projects[2].id,
-        status: OrderStatus.RECEIVED,
+        status: 'RECEIVED',
         itemName: 'Lipofectamine 3000',
         vendor: 'ThermoFisher',
         catalogNumber: 'L3000015',
@@ -621,7 +621,7 @@ async function main() {
       data: {
         orderNumber: `ORD-${Date.now()}-0005`,
         projectId: projects[1].id,
-        status: OrderStatus.REQUESTED,
+        status: 'REQUESTED',
         itemName: 'IPTG (Isopropyl β-D-1-thiogalactopyranoside)',
         vendor: 'Sigma-Aldrich',
         catalogNumber: 'I6758',
